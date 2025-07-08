@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vmlist</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #bde0fe, #caf0f8, #a2d2ff);
+            color: black;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-top: -1%;
+            text-align: center;
+            color: black;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 1s ease-in-out;
+            position: relative;
+            z-index: 1;
+        }  
+        .content {
+            flex: 1;
+            padding: 20px;
+            margin-left: 0;
+            transition: margin-left 0.3s ease;
+            position: relative;
+            width: 100%;
+        }
+        .content.shifted {
+            margin-left: 250px;
+        }
+        vm-table-container {
+            margin-top: 120px;
+            width: 50%;
+            background: #F8F7FF;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            overflow: auto;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: fixed;
+        }
+        .vm-table {
+            width: 70%;
+            border-collapse: collapse;
+            font-size: 1rem;
+            color: black;
+            margin-top: 7%;
+            border-radius: 25px;
+            margin-left: 15%;
+            overflow: scroll;
+            position: fixed;
+        }
+        .vm-table thead th {
+            background: #2c3e50;
+            color: #fff;
+            font-weight: 600;
+            padding: 15px 20px;
+            letter-spacing: 1px;
+        }
+        .vm-table tbody tr {
+            background: #F8F7FF;
+            transition: all 0.3s ease;
+        }
+        .vm-table tbody tr:hover {
+            background: rgba(60, 60, 100, 0.9);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+        .vm-table tbody td {
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .vm-table tbody tr td[colspan="4"] {
+            font-style: italic;
+            color: #a0a0a0;
+            padding: 30px;
+            text-align: center;
+        }
+        .vm-table tbody tr {
+            animation: slideIn 0.5s ease forwards;
+            opacity: 0;
+        }
+        .vm-table tbody tr:nth-child(1) { animation-delay: 0.1s; }
+        .vm-table tbody tr:nth-child(2) { animation-delay: 0.2s; }
+        .vm-table tbody tr:nth-child(3) { animation-delay: 0.3s; }
+        .vm-table tbody tr:nth-child(4) { animation-delay: 0.4s; }
+        .vm-table tbody tr:nth-child(5) { animation-delay: 0.5s; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: #2c3e50;
+            color: white;
+            position: fixed;
+            left: -250px;
+            transition: left 0.3s ease;
+            z-index: 10;
+            margin-top: -2%;
+        }
+        .sidebar.active {
+            left: 0;
+        }
+        .sidebar img {
+            margin-left: 30%;
+            margin-top: 12%;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+        .sidebar ul li {
+            padding: 0;
+            border-bottom: 1px solid #34495e;
+        }
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            align-items: center;
+            cursor: pointer;
+            padding: 15px;
+            transition: background 0.3s ease;
+        }
+        .sidebar ul li a:hover,
+        .sidebar ul li a.active {
+            background: white;
+            color: black;
+        }
+        .sidebar ul li a i {
+            margin-right: 10px;
+        }
+        .toggle-btn {
+            position: absolute;
+            left: 15px;
+            top: 25px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            background: transparent;
+            color: white;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+                left: -200px;
+            }
+            .sidebar.active {
+                left: 0;
+            }
+            .content.shifted {
+                margin-left: 200px;
+            }
+            .toggle-btn {
+                left: 10px;
+                top: 10px;
+                font-size: 20px;
+            }
+        }
+        @media (max-width: 600px) {
+            .sidebar.active ~ .form-popup {
+                width: 100%;
+                top: 80%;
+                transform: translate(-50%, 0);
+            }
+        }
+        .toggle-btn.active {
+            color: white;
+        }
+        #delete-vms-btn {
+            padding: 10px 20px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            position: absolute;
+            top: 105px;
+            right: 220px;
+            z-index: 1;
+        }
+        #notification {
+            display: none;
+            color: green;
+            background: #e0ffe0;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            text-align: center;
+            position: fixed;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+        .sidebar .dropdown-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            backdrop-filter: blur(2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.4s ease;
+            opacity: 0;
+        }
+        .sidebar .dropdown-menu.show {
+            max-height: 350px;
+            padding: 10px 0;
+            opacity: 1;
+        }
+        .sidebar .dropdown-item {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 12px 30px;
+            background: #2c3e50;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transform: translateX(-10px);
+            opacity: 0;
+            font-size: 0.8rem;
+        }
+        .sidebar .dropdown-menu.show .dropdown-item {
+            transform: translateX(0);
+            opacity: 1;
+            transition-delay: calc(0.1s * var(--item-index));
+        }
+        .sidebar .dropdown-item:hover {
+            background: white;
+            color: black;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            transform: translateX(5px) scale(1.02);
+        }
+        .sidebar .dropdown-item::after {
+            content: '';
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.6s ease;
+        }
+        .sidebar .dropdown-item:active::after {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 0;
+        }
+        .sidebar .dropdown-item .tooltip {
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 10;
+        }
+        .sidebar .dropdown-item:hover .tooltip {
+            opacity: 1;
+            transform: translate(10px, -50%);
+        }
+        .sidebar .dropdown-submenu {
+            position: relative;
+        }
+        .sidebar .dropdown-submenu .dropdown-submenu {
+            position: absolute;
+            left: 100%;
+            top: 0;
+            color: black;
+            width: 200px;
+            display: none;
+            transform: translateX(-10px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .sidebar .dropdown-submenu:hover .dropdown-menu {
+            display: block;
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .sidebar .dropdown-toggle-icon {
+            float: right;
+            margin-top: 2px;
+            margin-right: 8%;
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+        .sidebar .dropdown-toggle-icon:hover {
+            color: #3498db;
+        }
+        .sidebar .dropdown-toggle-icon.rotate {
+            transform: rotate(180deg);
+        }
+        .dark-mode .sidebar .dropdown-menu {
+            background: rgba(17, 17, 17, 0.95);
+        }
+        .dark-mode .sidebar .dropdown-item {
+            color: white;
+            background: #111;
+        }
+        .dark-mode .sidebar .dropdown-item:hover {
+            background: white;
+            color: black;
+        }
+        .dark-mode .sidebar .dropdown-item .tooltip {
+            background: #1a252f;
+            font-size: 3rem;
+        }
+        @media (max-width: 768px) {
+            .sidebar .dropdown-menu {
+                width: 100%;
+            }
+            .sidebar .dropdown-submenu .dropdown-menu {
+                position: static;
+                width: 100%;
+                transform: none;
+            }
+            .sidebar .dropdown-item .tooltip {
+                display: none;
+            }
+        }
+
+
+        /* Header Styling */
+        .dashboard-header {
+            background: #2c3e50;
+            color:white;
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+            width: 130%;
+            height:75px;
+            margin-left: -10%;;
+            margin-top:-2.2%;
+        }
+        .dashboard-header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-left: -10%;
+            transition: transform 0.3s ease;
+            color: white !important; /* Ensure white color with high specificity */
+            align-items:Center;
+            justify-content:center;
+            text-align:center;
+            margin-top:5px;
+        }
+       
+        .dashboard-header:hover h1 {
+            transform: scale(1.02);
+        }
+        .dark-mode .dashboard-header {
+            background: #1a252f;
+           
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Responsive Header */
+        @media (max-width: 768px) {
+            .dashboard-header {
+                padding: 15px 20px;
+            }
+            .dashboard-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .dashboard-header {
+                padding: 10px 15px;
+            }
+            .dashboard-header h1 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="toggle-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </div>
+    <div class="sidebar" id="sidebar">
+        <img src="https://logos-world.net/wp-content/uploads/2022/07/Lenovo-Logo.png" height="60px" alt="Lenovo Logo">
+        <div style="padding:10px;">
+            <input type="text" placeholder="Search..." style="width:90%; padding:8px; border-radius:5px; border:none; background:white; color:black;">
+        </div>
+        <ul>
+            <li><a href="{% url 'deploy_vm' %}"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li>
+                <a href="#"><i class="fas fa-users"></i> Virtual Machines <i class="fas fa-chevron-down dropdown-toggle-icon"></i></a>
+                 <ul class="dropdown-menu">
+                    <li><a href="{% url 'create-vm' %}" class="dropdown-item"><i class="fas fa-laptop-code"></i>NEW VIRTUAL MACHINE</a></li>
+                    <li><a href="{% url 'vm_list' %}" class="dropdown-item"><i class="fas fa-cube"></i> VM DETAILS</a></li>
+                    <li><a href="{% url 'vm_new_list' %}" class="dropdown-item"><i class="fas fa-list"></i> VM DISTRIBUTION LIST</a></li>
+                    <li><a href="#" class="dropdown-item" onclick="alert('Clone VM: Coming soon!')"><i class="fas fa-ethernet"></i> CLONE VM</a></li>
+                    <li class="dropdown-submenu">
+                        <a href="#" class="dropdown-item dropdown-toggle"><i class="fas fa-camera"></i>SNAPSHOTS</a>
+                        <ul class="dropdown-menu sub-menu">
+                            <li><a href="{% url 'vm_list' %}" class="dropdown-item" onclick="alert('Convert to Template: Coming soon!')"><i class="fas fa-camera"></i>Take Snapshot</a></li>
+                            <li><a href="#" class="dropdown-item" onclick="alert('Export OVF Template: Coming soon!')"><i class="fas fa-camera"></i>Manage Snapshots</a></li>
+                            <li><a href="#" class="dropdown-item" onclick="alert('Export OVF Template: Coming soon!')"><i class="fas fa-camera"></i>Delete Snapshots</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown-submenu">
+                        <a href="#" class="dropdown-item dropdown-toggle"><i class="fas fa-file-export"></i>TEMPLATES</a>
+                        <ul class="dropdown-menu sub-menu">
+                            <li><a href="{% url 'vm_list' %}" class="dropdown-item" onclick="alert('Convert to Template: Coming soon!')"><i class="fas fa-file-export"></i> Convert to Template</a></li>
+                            <li><a href="#" class="dropdown-item" onclick="alert('Export OVF Template: Coming soon!')"><i class="fas fa-file-export"></i>Export OVF Template</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown-submenu">
+                        <a href="#" class="dropdown-item dropdown-toggle"><i class="fas fa-power-off"></i> POWER OPERATIONS</a>
+                        <ul class="dropdown-menu sub-menu">
+                            <li><a href="{% url 'vm_list' %}" class="dropdown-item" onclick="alert('Power On: Select VM to Power On!')"><i class="fas fa-play"></i> Power On</a></li>
+                            <li><a href="{% url 'vm_list' %}" class="dropdown-item" onclick="alert('Power Off: Select VM to Power Off')"><i class="fas fa-stop"></i> Power Off</a></li>
+                            <li><a href="#" class="dropdown-item" onclick="alert('Restart: Coming soon!')"><i class="fas fa-redo"></i> Restart</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            
+            <li><a href="{% url 'host_list' %}"><i class="fas fa-users"></i> Host Details</a></li>
+            <li><a href="#"><i class="fas fa-chart-line"></i> Monitor</a></li>
+            <li><a href="#"><i class="fas fa-tools"></i> Configure</a></li>
+            <li><a href="./settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="#"><i class="fas fa-question-circle"></i> Help</a></li>
+            <li><a href="#"><i class="fas fa-info-circle"></i> How to Deploy VM</a></li>
+        </ul>
+    </div>
+    <div class="content" id="content">
+        <div class="dashboard-header">
+            <h1>Virtual Machine Details</h1>
+        </div>
+        <div id="notification"></div>
+        <form id="vm-delete-form">
+            <button id="delete-vms-btn" 
+                    hx-post="/delete-vms/" 
+                    hx-target="#vm-table-container" 
+                    hx-swap="innerHTML" 
+                    hx-confirm="Are you sure you want to Permanently delete the selected VMs?"
+                    hx-include="#vm-delete-form"
+                    hx-on::after-request="if(event.detail.successful) {
+                        let vmNames = Array.from(document.querySelectorAll('input[name=vm_to_delete]:checked')).map(cb => cb.value).join(', ');
+                        document.getElementById('notification').innerText = 'VM ' + (vmNames) + ' successfully deleted';
+                        document.getElementById('notification').style.display = 'block';
+                        setTimeout(() => document.getElementById('notification').style.display = 'none', 5000);
+                    }">
+                Delete  
+            </button>
+            <div id="vm-table-container">
+                <table class="vm-table" hx-get="/vms/" hx-trigger="every 7200s" hx-target="this" hx-swap="outerHTML">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="select-all" onclick="toggleSelectAll()"></th>
+                            <th>VM Name</th>
+                            <th>Memory (GB)</th>
+                            <th>CPU Unit</th>
+                            <th>Disk Capacity (GB)</th>
+                            <th>Status</th>
+                            <th>OS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vm in vms %}
+                        <tr>
+                            <td><input type="checkbox" name="vm_to_delete" value="{{ vm.name }}"></td>
+                            <td style="cursor: pointer;" onclick="window.location.href='{% url 'vm_details' %}?vm_name={{ vm.name }}'">{{ vm.name }}</td>
+                            <td>{{ vm.memory }}</td>
+                            <td>{{ vm.cpu }}</td>
+                            <td>{{ vm.disk }}</td>
+                            <td>{{ vm.uptime }}</td>
+                            <td>{{ vm.os }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7">No VM deployed yet or waiting for deployment...</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </div>
+    <script>
+        function toggleSidebar() {
+            let sidebar = document.getElementById("sidebar");
+            let content = document.getElementById("content");
+            let toggleBtn = document.querySelector(".toggle-btn");
+            sidebar.classList.toggle("active");
+            content.classList.toggle("shifted");
+            toggleBtn.classList.toggle("active");
+        }
+        function toggleSelectAll() {
+            let selectAllCheckbox = document.getElementById("select-all");
+            let checkboxes = document.querySelectorAll('input[name="vm_to_delete"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebars = document.querySelectorAll('#sidebar');
+            if (sidebars.length > 1) {
+                console.log("Multiple sidebars detected on load, removing extras");
+                for (let i = 1; i < sidebars.length; i++) {
+                    sidebars[i].remove();
+                }
+            }
+        });
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            console.log("HTMX swap completed:", event.detail);
+            const sidebars = document.querySelectorAll('#sidebar');
+            if (sidebars.length > 1) {
+                console.log("Multiple sidebars detected after swap, removing extras");
+                for (let i = 1; i < sidebars.length; i++) {
+                    sidebars[i].remove();
+                }
+            }
+        });
+        document.body.addEventListener('htmx:beforeRequest', function(event) {
+            console.log("HTMX request starting:", event.detail);
+        });
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            console.log("HTMX swap completed:", event.detail);
+            const headers = document.querySelectorAll('h1');
+            const buttons = document.querySelectorAll('#delete-vms-btn');
+            if (headers.length > 1) {
+                console.log("Multiple h1 detected, removing extras");
+                for (let i = 1; i < headers.length; i++) {
+                    headers[i].remove();
+                }
+            }
+            if (buttons.length > 1) {
+                console.log("Multiple buttons detected, removing extras");
+                for (let i = 1; i < buttons.length; i++) {
+                    buttons[i].remove();
+                }
+            }
+        });
+        document.querySelectorAll(".sidebar .dropdown-toggle-icon").forEach(toggle => {
+            toggle.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const dropdown = toggle.closest("li").querySelector(".dropdown-menu");
+                dropdown.classList.toggle("show");
+                toggle.classList.toggle("rotate");
+            });
+        });
+        document.querySelectorAll(".sidebar .dropdown-submenu").forEach(submenu => {
+            const toggle = submenu.querySelector(".dropdown-toggle");
+            const subMenu = submenu.querySelector(".sub-menu");
+            toggle.addEventListener("click", (e) => {
+                e.preventDefault();
+                subMenu.classList.toggle("show");
+            });
+        });
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            console.log("HTMX swap completed for recent activity:", evt.detail);
+        });
+        htmx.logAll();
+    </script>
+
+    <script>
+        // Override toggleSidebar to include localStorage persistence
+        const originalToggleSidebar = toggleSidebar;
+        toggleSidebar = function() {
+            // Call the original toggleSidebar function
+            originalToggleSidebar();
+            
+            // Save sidebar state to localStorage
+            let sidebar = document.getElementById("sidebar");
+            localStorage.setItem("sidebarState", sidebar.classList.contains("active") ? "active" : "inactive");
+        };
+
+        // Restore sidebar state on page load
+        document.addEventListener("DOMContentLoaded", () => {
+            let sidebar = document.getElementById("sidebar");
+            let content = document.getElementById("content");
+            let toggleBtn = document.querySelector(".toggle-btn");
+            
+            // Get saved sidebar state or default to inactive
+            let sidebarState = localStorage.getItem("sidebarState") || "inactive";
+            
+            // Ensure correct state is applied
+            if (sidebarState === "active") {
+                // Apply active state
+                if (!sidebar.classList.contains("active")) {
+                    sidebar.classList.add("active");
+                }
+                if (!content.classList.contains("shifted")) {
+                    content.classList.add("shifted");
+                }
+                if (!toggleBtn.classList.contains("active")) {
+                    toggleBtn.classList.add("active");
+                }
+            } else {
+                // Apply inactive state
+                if (sidebar.classList.contains("active")) {
+                    sidebar.classList.remove("active");
+                }
+                if (content.classList.contains("shifted")) {
+                    content.classList.remove("shifted");
+                }
+                if (toggleBtn.classList.contains("active")) {
+                    toggleBtn.classList.remove("active");
+                }
+            }
+        });
+
+        // Ensure state persists on refresh by forcing re-application
+        window.addEventListener("load", () => {
+            let sidebar = document.getElementById("sidebar");
+            let content = document.getElementById("content");
+            let toggleBtn = document.querySelector(".toggle-btn");
+            
+            let sidebarState = localStorage.getItem("sidebarState") || "inactive";
+            
+            // Re-apply state to handle refresh
+            if (sidebarState === "active") {
+                sidebar.classList.add("active");
+                content.classList.add("shifted");
+                toggleBtn.classList.add("active");
+            } else {
+                sidebar.classList.remove("active");
+                content.classList.remove("shifted");
+                toggleBtn.classList.remove("active");
+            }
+        });
+    </script>
+</body>
+</html>

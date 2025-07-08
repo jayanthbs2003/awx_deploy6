@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+    <p>
+        <span>{{ category }} VMs</span>
+    </p>
+</div>
+
+<div class="vm-table-container" style="margin-top: 20px;">
+    <h2>{{ category }} VMs</h2>
+    <!-- Table with HTMX to fetch data dynamically -->
+    <div id="vm-table"
+         hx-get="/vm-category-list/{{ category|lower }}/"
+         hx-trigger="load"
+         hx-swap="outerHTML"
+         style="text-align: center; padding: 20px; color: #2c3e50; font-weight: bold;">
+        Loading {{ category }} VMs...
+    </div>
+</div>
+
+<style>
+    .vm-table-container {
+        background: rgba(255, 255, 255, 0.8);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        margin-top: 20px;
+        color: black;
+        min-height: 200px; /* Ensure the container has some height while loading */
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    th, td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    th {
+        background: #2c3e50;
+        color: white;
+    }
+    tr:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    .dark-mode .vm-table-container {
+        background: rgba(255, 255, 255, 0.95);
+        color: black;
+    }
+    .dark-mode th {
+        background: #1a252f;
+        color: white;
+    }
+</style>
+
+{% endblock %}

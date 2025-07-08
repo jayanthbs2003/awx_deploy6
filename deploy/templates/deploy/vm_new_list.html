@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{% csrf_token %}">
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <title>VM Distribution List</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+        body {
+            display: flex;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #bde0fe, #caf0f8, #a2d2ff);
+            color: black;
+            min-height: 100vh;
+        }
+        /* Header Styling */
+        .dashboard-header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0,0,0.2);
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+            width: 130%;
+            height: 75px;
+            margin-left: -15%;
+            margin-top: -2.2%;
+        }
+        .dashboard-header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: transform 0.3s ease;
+            color: white !important;
+            text-align: center;
+            margin-top: 5px;
+        }
+        .dashboard-header:hover h1 {
+            transform: scale(1.02);
+        }
+        .dark-mode .dashboard-header {
+            background: #1a252f;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+        }
+        /* Responsive Header */
+        @media (max-width: 768px) {
+            .dashboard-header {
+                padding: 15px 20px;
+            }
+            .dashboard-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .dashboard-header {
+                padding: 10px 15px;
+            }
+            .dashboard-header h1 {
+                font-size: 1.2rem;
+            }
+        }
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: #2c3e50;
+            color: white;
+            position: fixed;
+            left: -250px;
+            transition: left 0.1s ease;
+            z-index: 100;
+            margin-top: -2%;
+        }
+        .sidebar.active {
+            left: 0;
+        }
+        .sidebar img {
+            margin-left: 30%;
+            margin-top: 18%;
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+        .sidebar ul li {
+            padding: 0px;
+            border-bottom: 1px solid #34495e;
+        }
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            align-items: center;
+            cursor: pointer;
+            padding: 15px;
+            transition: background 0.3s ease;
+        }
+        .sidebar ul li a:hover,
+        .sidebar ul li a.active {
+            background: white;
+            color: black;
+        }
+        .sidebar ul li a i {
+            margin-right: 10px;
+        }
+        /* Enhanced Sidebar Animations */
+        .sidebar {
+            transition: left 0.5s cubic-bezier(0,68, -0.55, 0.27, 1.55), box-shadow 0.3s ease;
+        }
+        .sidebar ul li a {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+        .sidebar ul li a:hover {
+            transform: translateX(5px);
+            background: linear-gradient(90deg, #ffffff);
+            color: #2c3e50;
+        }
+        .sidebar ul li a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.2);
+            transition: left 0.4s ease;
+        }
+        .sidebar ul li a:hover::before {
+            left: 100%;
+        }
+        .toggle-btn {
+            position: absolute;
+            left: 15px;
+            top: 25px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            background: transparent;
+            color: white;
+        }
+        .toggle-btn.active {
+            color: white;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+            margin-left: 50px;
+            transition: margin-left 0.3s ease;
+            position: relative;
+            width: 100%;
+        }
+        .content.shifted {
+            margin-left: 250px;
+        }
+        .dark-mode {
+            background: #1e1e1e;
+            color: white;
+        }
+        .dark-mode .sidebar {
+            background: #111;
+            color: white;
+        }
+        .dark-mode .sidebar ul li a {
+            color: white;
+        }
+        #profileDropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            background: white;
+            color: black;
+            border-radius: 5px;
+            margin-top: 10px;
+            box-shadow: 0 0 10px rgba(0, 0,0, 0.2);
+            z-index: 100;
+        }
+        #profileDropdown p {
+            padding: 10px;
+            margin: 0;
+            cursor: pointer;
+        }
+        #profileDropdown p:hover {
+            background: #eee;
+        }
+        .logoutbtn {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            height: 10%;
+;
+            background: #e74c3c;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+            border: 1px solid black;
+            margin-top: 0.5%;
+            z-index: 10;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            display: flex;
+        }
+        .modal-overlay .modal {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0,0,0.3);
+            transform: scale(0.8);
+        }
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+        .modal h2 {
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .modal-buttons button {
+            padding: 12px 25px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .modal-buttons button:hover {
+            transform: scale(1.05);
+        }
+        .cancel-btn {
+            background: linear-gradient(45deg, #ccc, #bbb);
+        }
+        .logout-confirm-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .sidebar .dropdown-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            backdrop-filter: blur(2px);
+            box-shadow: 0 5px 15px rgba(0, 0,0,0.2);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.4s ease;
+            opacity: 0;
+        }
+        .sidebar .dropdown-menu.show {
+            max-height: 800px;
+            padding: 10px 0;
+            opacity: 1;
+        }
+        .sidebar .dropdown-item {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 12px 30px;
+            background: #2c3e50;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transform: translateX(-10px);
+            opacity: 0;
+            font-size: 0.8rem;
+        }
+        .sidebar .dropdown-menu.show .dropdown-item {
+            transform: translateX(0);
+            opacity: 1;
+            transition-delay: calc(0.1s * var(--item-index));
+        }
+        .sidebar .dropdown-item:hover {
+            background: white;
+            color: black;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            transform: translateX(5px) scale(1.02);
+        }
+        .sidebar .dropdown-item::after {
+            content: '';
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255,255, 0.3);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.6s ease;
+        }
+        .sidebar .dropdown-item:active::after {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 0;
+        }
+        .sidebar .dropdown-item .tooltip {
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 10;
+        }
+        .sidebar .dropdown-item:hover .tooltip {
+            opacity: 1;
+            transform: translate(10px, -50%);
+        }
+        .sidebar .dropdown-submenu {
+            position: relative;
+        }
+        .sidebar .dropdown-submenu .dropdown-submenu {
+            position: absolute;
+            left: 100%;
+            top: 10;
+            color: black;
+            width: 200px;
+            display: none;
+            transform: translateX(-8px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .sidebar .dropdown-submenu:hover .dropdown-menu {
+            display: block;
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .sidebar .dropdown-toggle-icon {
+            float: right;
+            margin-top: 2px;
+            margin-right: 8%;
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+        .sidebar .dropdown-toggle-icon:hover {
+            color: #3498db;
+        }
+        .sidebar .dropdown-toggle-icon.rotate {
+            transform: rotate(180deg);
+        }
+        .dark-mode .sidebar .dropdown-menu {
+            background: rgba(17, 17, 17, 0.95);
+        }
+        .dark-mode .sidebar .dropdown-item {
+            color: white;
+            background: #111;
+        }
+        .dark-mode .sidebar .dropdown-item:hover {
+            background: white;
+            color: black;
+        }
+        .dark-mode .sidebar .dropdown-item .tooltip {
+            background: #1a252f;
+            font-size: 3rem;
+        }
+        @media (max-width: 768px) {
+            .sidebar .dropdown-menu {
+                width: 100%;
+            }
+            .sidebar .dropdown-submenu .dropdown-menu {
+                position: static;
+                width: 100%;
+                transform: none;
+            }
+            .sidebar .dropdown-item .tooltip {
+                display: none;
+            }
+            .content {
+                margin-left: 0;
+            }
+            .content.shifted {
+                margin-left: 0;
+            }
+        }
+        /* Table Styling (from vmlist page) */
+        .vm-table-container {
+            margin-top: 120px;
+            width: 70%;
+            background: #F8F7FF;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            overflow:scroll;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 30px;
+            height:600px;
+        }
+        .vm-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1rem;
+            color: black;
+            border-radius: 25px;
+        }
+        .vm-table thead th {
+            background: #2c3e50;
+            color: #fff;
+            font-weight: 600;
+            padding: 15px 20px;
+            letter-spacing: 1px;
+        }
+        .vm-table tbody tr {
+            background: #F8F7FF;
+            transition: all 0.3s ease;
+        }
+        .vm-table tbody tr:hover {
+            background: rgba(60, 60, 100, 0.9);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+        .vm-table tbody td {
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .vm-table tbody tr td[colspan="3"] {
+            font-style: italic;
+            color: #a0a0a0;
+            padding: 30px;
+            text-align: center;
+        }
+        .vm-table tbody tr {
+            animation: slideIn 0.5s ease forwards;
+            opacity: 0;
+        }
+        .vm-table tbody tr:nth-child(1) { animation-delay: 0.1s; }
+        .vm-table tbody tr:nth-child(2) { animation-delay: 0.2s; }
+        .vm-table tbody tr:nth-child(3) { animation-delay: 0.3s; }
+        .vm-table tbody tr:nth-child(4) { animation-delay: 0.4s; }
+        .vm-table tbody tr:nth-child(5) { animation-delay: 0.5s; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        /* Additional styling for sections */
+        .vm-section {
+            margin-bottom: 40px;
+        }
+        .vm-section h2 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 1s ease-in-out;
+        }
+        .dark-mode .vm-section h2 {
+            color: #ddd;
+        }
+    </style>  
+</head>
+<body>
+    <div class="toggle-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </div>
+    <div class="topright" style="position:absolute; right: 100px; top: 15px; display:flex; align-items:center; gap:15px; z-index:10; color:white;">
+        <div id="notification" style="position:relative; color:white; cursor:pointer;">
+            <i class="fas fa-bell" style="font-size:24px;color:white; transition: transform 0.3s ease;"></i>
+            <span style="position:absolute; top:-5px; right:-10px; background:red; color:white; font-size:12px; border-radius:50%; padding:2px 6px;">3</span>
+        </div>
+        <div id="profile" style="position:relative; cursor:pointer;">
+            <i class="fas fa-user-circle" style="font-size:26px; transition: transform 0.3s ease; color:white;"></i>
+            <div id="profileDropdown">
+                <p>administrator@vsphere.local</p>
+                <p onclick="alert('Settings coming soon!')">Settings</p>
+                <p onclick="alert('change password coming soon!')">Change Password</p>
+            </div>
+        </div>
+        <button onclick="toggleDarkMode()" style="padding:5px 10px; background:white; border:none; border-radius:8px; cursor:pointer; color:white; transition: transform 0.3s ease;">🌙</button>
+    </div>
+    <div class="sidebar" id="sidebar">
+        <img src="https://logos-world.net/wp-content/uploads/2022/07/Lenovo-Logo.png" height="60px" alt="Lenovo Logo">
+        <div style="padding:10px;">
+            <input type="text" placeholder="Search..." style="width:90%; padding:8px; border-radius:5px; border:none; background:white; color:black;">
+        </div>
+        <ul>
+            <li><a href="{% url 'deploy_vm' %}"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li>
+                <a href="#"><i class="fas fa-desktop"></i> Virtual Machines <i class="fas fa-chevron-down dropdown-toggle-icon"></i></a>
+                 <ul class="dropdown-menu">
+                    <li><a href="{% url 'create-vm' %}" class="dropdown-item"><i class="fas fa-laptop-code"></i>NEW VIRTUAL MACHINE</a></li>
+                    <li><a href="{% url 'vm_list' %}" class="dropdown-item"><i class="fas fa-cube"></i> VM DETAILS</a></li>
+                    <li><a href="{% url 'vm_new_list' %}" class="dropdown-item"><i class="fas fa-list"></i> VM DISTRIBUTION LIST</a></li>
+                    <li><a href="#" class="dropdown-item" onclick="alert('Clone VM: Coming soon!')"><i class="fas fa-ethernet"></i> CLONE VM</a></li>
+                    <li class="dropdown-submenu">
+                        <a href="#" class="dropdown-item dropdown-toggle"><i class="fas fa-camera"></i>SNAPSHOTS</a>
+                        <ul class="dropdown-menu sub-menu">
+                            <li><a href="{% url 'vm_list' %}" class="dropdown-item" onclick="alert('Convert to Template: Coming soon!')"><i class="fas fa-camera"></i>Take Snapshot</a></li>
+                            <li><a href="#" class="dropdown-item" onclick="alert('Export OVF Template: Coming soon!')"><i class="fas fa-camera"></i>Manage Snapshots</a></li>
+                            <li><a href="#" class="dropdown-item" onclick="alert('Export OVF Template: Coming soon!')"><i class="fas fa-camera"></i>Delete Snapshots</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown-submenu">
+                        <a href="#" class="dropdown-item dropdown-toggle"><i class="fas fa-file-export"></i>TEMPLATES</a>
+                        <ul class="dropdown-menu sub-menu">
+                            <li><a href="{% url 'vm_list' %}" class="dropdown-item" onclick="alert('Convert to Template: Coming soon!')"><i class="fas fa-file-export"></i> Convert to Template</a></li>
+                            <li><a href="#" class="dropdown-item" onclick="alert('Export OVF Template: Coming soon!')"><i class="fas fa-file-export"></i>Export OVF Template</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown-submenu">
+                        <a href="#" class="dropdown-item dropdown-toggle"><i class="fas fa-power-off"></i> POWER OPERATIONS</a>
+                        <ul class="dropdown-menu sub-menu">
+                            <li><a href="{% url 'vm_list' %}" class="dropdown-item" onclick="alert('Power On: Select VM to Power On!')"><i class="fas fa-play"></i> Power On</a></li>
+                            <li><a href="{% url 'vm_list' %}" class="dropdown-item" onclick="alert('Power Off: Select VM to Power Off')"><i class="fas fa-stop"></i> Power Off</a></li>
+                            <li><a href="#" class="dropdown-item" onclick="alert('Restart: Coming soon!')"><i class="fas fa-redo"></i> Restart</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        
+            <li><a href="{% url 'host_list' %}"><i class="fas fa-cubes"></i> Host Details</a></li>
+            <li><a href="#"><i class="fas fa-chart-line"></i> Monitor</a></li>
+            <li><a href="#"><i class="fas fa-tools"></i> Configure</a></li>
+            <li><a href="./settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="https://chatgpt.com/?model=auto"><i class="fas fa-question-circle"></i> Help</a></li>
+            <li><a href="https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/8-0/vsphere-virtual-machine-administration-guide-8-0/deploying-virtual-machinesvsphere-vm-admin/deploy-a-virtual-machine-from-a-template-h5vsphere-vm-admin.html"><i class="fas fa-info-circle"></i> How to Deploy VM</a></li>
+        </ul>
+    </div>
+    <div class="content" id="content">
+        <div class="dashboard-header">
+            <h1>VM Distribution List</h1>
+        </div>
+        <!-- Hidden div to fetch VM distribution data -->
+        <div id="vm-distribution-data" 
+             hx-get="/api/vm-distribution"
+             hx-trigger="load, every 3s" 
+             hx-swap="outerHTML"
+             style="display: none;"
+             data-linux-vm-names=""
+             data-windows-vm-names=""
+             data-other-vm-names="">
+        </div>
+        <!-- Combined VMs Section -->
+        <div class="vm-section">
+         
+            <div class="vm-table-container">
+                <table class="vm-table">
+                    <thead>
+                        <tr>
+                            <th>Linux VMs</th>
+                            <th>Windows VMs</th>
+                            <th>Other VMs</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vms-tbody">
+                        <tr>
+                            <td colspan="3">Loading VMs...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <button class="logoutbtn" onclick="showLogoutModal()">Logout</button>
+
+    <div class="modal-overlay" id="logoutModal">
+        <div class="modal">
+            <h2>Are you sure you want to logout?</h2>
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeLogoutModal()">Cancel</button>
+                <button class="logout-confirm-btn" onclick="confirmLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+<script>
+    function toggleSidebar() {
+        let sidebar = document.getElementById("sidebar");
+        let content = document.getElementById("content");
+        let toggleBtn = document.querySelector(".toggle-btn");
+        sidebar.classList.toggle("active");
+        content.classList.toggle("shifted");
+        toggleBtn.classList.toggle("active");
+        localStorage.setItem("sidebarState", sidebar.classList.contains("active") ? "active" : "inactive");
+    }
+
+    document.querySelectorAll(".sidebar ul li a").forEach(item => {
+        item.addEventListener("click", function (e) {
+            if (e.target.classList.contains("dropdown-toggle-icon")) return;
+            document.querySelectorAll(".sidebar ul li a").forEach(link => link.classList.remove("active"));
+            this.classList.add("active");
+            localStorage.setItem("selectedSidebarItem", this.getAttribute("href"));
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+        let selectedItem = localStorage.getItem("selectedSidebarItem");
+        if (selectedItem) {
+            let activeLink = document.querySelector(`.sidebar ul li a[href="${selectedItem}"]`);
+            if (activeLink) activeLink.classList.add("active");
+        }
+        let sidebar = document.getElementById("sidebar");
+        let content = document.getElementById("content");
+        let toggleBtn = document.querySelector(".toggle-btn");
+        let sidebarState = localStorage.getItem("sidebarState");
+        if (sidebarState === "active" && !sidebar.classList.contains("active")) {
+            sidebar.classList.add("active");
+            content.classList.add("shifted");
+            toggleBtn.classList.add("active");
+        }
+    });
+
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (localStorage.getItem("darkMode") === "true") document.body.classList.add("dark-mode");
+    });
+
+    document.getElementById("profile").addEventListener("click", () => {
+        let dropdown = document.getElementById("profileDropdown");
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        document.querySelector("#profile i").style.transform = dropdown.style.display === "block" ? "scale(1.2)" : "scale(1)";
+    });
+
+    document.getElementById("notification").addEventListener("click", () => {
+        document.querySelector("#notification i").style.transform = "rotate(15deg)";
+        setTimeout(() => document.querySelector("#notification i").style.transform = "rotate(0deg)", 300);
+        alert("Notifications: 3 new events!");
+    });
+
+    function showLogoutModal() {
+        let modal = document.getElementById("logoutModal");
+        modal.style.display = "flex";
+        setTimeout(() => modal.classList.add("active"), 10);
+    }
+
+    function closeLogoutModal() {
+        let modal = document.getElementById("logoutModal");
+        modal.classList.remove("active");
+        setTimeout(() => modal.style.display = "none", 300);
+    }
+
+    function confirmLogout() {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "{% url 'login_page' %}";
+    }
+
+    document.querySelectorAll(".sidebar .dropdown-toggle-icon").forEach(toggle => {
+        toggle.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const dropdown = toggle.closest("li").querySelector(".dropdown-menu");
+            dropdown.classList.toggle("show");
+            toggle.classList.toggle("rotate");
+        });
+    });
+
+    document.querySelectorAll(".sidebar .dropdown-submenu").forEach(submenu => {
+        const toggle = submenu.querySelector(".dropdown-toggle");
+        const subMenu = submenu.querySelector(".sub-menu");
+        toggle.addEventListener("click", (e) => {
+            e.preventDefault();
+            subMenu.classList.toggle("show");
+        });
+    });
+
+    // Update table when new data is fetched via HTMX
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.target.id === 'vm-distribution-data') {
+            const dataElement = evt.target;
+            const linuxVmNames = dataElement.getAttribute('data-linux-vm-names').split(',').filter(name => name.trim());
+            const windowsVmNames = dataElement.getAttribute('data-windows-vm-names').split(',').filter(name => name.trim());
+            const otherVmNames = dataElement.getAttribute('data-other-vm-names').split(',').filter(name => name.trim());
+
+            // Find the maximum length to ensure all columns have the same number of rows
+            const maxLength = Math.max(linuxVmNames.length, windowsVmNames.length, otherVmNames.length);
+
+            // Generate rows for the table
+            const tbody = document.getElementById('vms-tbody');
+            let rows = '';
+
+            if (maxLength === 0) {
+                rows = '<tr><td colspan="3">No VMs found</td></tr>';
+            } else {
+                for (let i = 0; i < maxLength; i++) {
+                    const linuxName = linuxVmNames[i] || '-';
+                    const windowsName = windowsVmNames[i] || '-';
+                    const otherName = otherVmNames[i] || '-';
+                    rows += `<tr><td>${linuxName}</td><td>${windowsName}</td><td>${otherName}</td></tr>`;
+                }
+            }
+
+            tbody.innerHTML = rows;
+        }
+    });
+
+    htmx.logAll();
+</script>
+</body>
+</html>

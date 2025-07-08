@@ -1,0 +1,11 @@
+<tbody>
+    {% for host in hosts %}
+      <tr>
+        <td>{{ host.host }}</td>
+        <td>{{ host.name }}</td>
+        <td>{{ host.connection_state }}</td>
+        <td>{{ host.power_state }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+  

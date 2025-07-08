@@ -1,0 +1,112 @@
+<section class="vm-summary" id="vm-summary"
+        hx-get="{% if vm_name %}/vm-summary/?vm_name={{ vm_name }}{% else %}/vm-summary/{% endif %}"
+        hx-trigger="load, every 30s"
+        hx-swap="outerHTML">
+    {% if vms %}
+        {% for vm in vms %}
+            <div class="vm-card">
+                <h2>Virtual Machine Name - {{ vm.name }}</h2>
+                <ul>
+                    <li><strong>Power Status:</strong> {{ vm.power_emoji }} {{ vm.power_status }}</li>
+                    <li><strong>Guest OS:</strong> {{ vm.os_emoji }} {{ vm.os_display }}</li>
+                    <li><strong>VMware Tools:</strong> {{ vm.vmware_tools_status }}</li>
+                    <li><strong>DNS Name:</strong> {{ vm.dns_name|default:"—" }}</li>
+                    <li><strong>IP Addresses:</strong> {{ vm.ip_addresses|default:"—" }}</li>
+                    <li><strong>Encryption:</strong> {{ vm.encryption_status }}</li>
+                   
+                    <li><strong>Datastore:</strong> {{ vm.datastore }}</li>
+                    <li><strong>Cluster:</strong> {{ vm.cluster }}</li>
+                    <li><strong>Host:</strong> {{ vm.host }}</li>
+                </ul>
+            </div>
+            <div class="vm-card guest-os">
+                <h2>Power Operations</h2>
+                <div class="power-box">{{ vm.power_status }}</div>
+                <button class="power-btn" 
+                        hx-post="{% url 'power_on_vm' vm_name=vm.name %}" 
+                        hx-swap="none"
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        {% if vm.power_status == 'Powered On' %}disabled{% endif %}>
+                    Power On
+                </button>
+                <button class="power-btn" 
+                        hx-post="{% url 'power_off_vm' vm_name=vm.name %}" 
+                        hx-swap="none"
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        {% if vm.power_status == 'Powered Off' %}disabled{% endif %}>
+                    Power Off
+                </button>
+                <button class="Enable" 
+                        onclick="convertToTemplate('{{ vm.name }}')" 
+                        {% if vm.power_status == 'Powered On' %}disabled{% endif %}>
+                    Patching
+                </button>
+            </div>
+            <div class="vm-card">
+                
+                <h2>VM Hardware</h2>
+                <p><li><strong>CPU:</strong> {{ vm.cpu }} CPU(s), {{ vm.cpu_usage|default:"0" }} MHz used</li></p>
+                <li><strong>Memory:</strong> {{ vm.memory }} GB</li>
+                <li><strong>Disk Capacity:</strong> {{ vm.disk }} GB</li>
+            </div>
+            <div class="vm-card">
+                <h2>Snapshots</h2>
+                <p><strong>No snapshots taken</strong></p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="vm-card">
+            <h2>No VM Selected or VM Not Found</h2>
+        </div>
+    {% endif %}
+</section>
+<script>
+// Ensure CSRF token is included in non-HTMX POST requests
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || 
+           document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+}
+
+// Handle HTMX responses for power buttons
+document.body.addEventListener('htmx:afterRequest', function(event) {
+    if (event.detail.xhr.status === 200 || event.detail.xhr.status === 400) {
+        const response = JSON.parse(event.detail.xhr.responseText);
+        alert(response.message || response.error || 'Operation completed.');
+        // Trigger a refresh of the VM summary
+        htmx.trigger('#vm-summary', 'load');
+    } else {
+        const response = JSON.parse(event.detail.xhr.responseText);
+        alert(response.error || 'An error occurred. Please check the logs.');
+    }
+});
+
+// Handle errors during HTMX requests
+document.body.addEventListener('htmx:responseError', function(event) {
+    alert('Failed to perform operation: ' + (event.detail.xhr.statusText || 'Unknown error'));
+});
+
+function convertToTemplate(vmName) {
+    const csrfToken = getCsrfToken();
+    fetch(`/convert-to-template/${vmName}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert(data.message || 'VM has been successfully converted to a template.');
+                // Trigger a refresh of the VM summary
+                htmx.trigger('#vm-summary', 'load');
+            }
+        })
+        .catch(error => {
+            console.error('Error converting VM to template:', error);
+            alert('Failed to convert VM to template.');
+        });
+}
+</script>

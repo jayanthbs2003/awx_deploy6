@@ -1,0 +1,36 @@
+<table class="vm-table" hx-get="/vms/" hx-trigger="every 7200s" hx-target="this" hx-swap="outerHTML">
+    {% if error_message %}
+    <tr>
+        <td colspan="5" style="color: red; text-align: center; padding: 10px;">{{ error_message }}</td>
+    </tr>
+    {% endif %}
+    <thead>
+        <tr>
+            <th><input type="checkbox" id="select-all" onclick="toggleSelectAll()"></th>
+            <th>VM Name</th>
+            <th>Memory (GB)</th>
+            <th>CPU Unit</th>
+            <th>Disk Usage (GB)</th>
+            <th>Server Uptime</th> <!-- New column -->
+            <th>OS</th> <!-- New column -->
+        </tr>
+    </thead>
+    <tbody>
+        {% for vm in vms %}
+        <tr>
+            <td><input type="checkbox" name="vm_to_delete" value="{{ vm.name }}"></td>
+            <td>{{ vm.name }}</td>
+            <td>{{ vm.memory }}</td>
+            <td>{{ vm.cpu }}</td>
+            <td>{{ vm.disk }}</td>
+            <td>{{ vm.uptime }}</td> <!-- Display uptime -->
+            <td>{{ vm.os }}</td> <!-- Display guest OS -->
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7">No VM deployed yet or waiting for deployment...</td> <!-- Updated colspan -->
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+

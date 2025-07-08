@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vCenter Login</title>
+</head>
+
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Inconsolata&display=swap");
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+body {
+    background: url("http://blogs.vmware.com/wp-content/uploads/sites/9/2019/07/a-screenshot-of-a-computer-description-automatica-4-1024x508.png")
+      no-repeat center center;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.holder {
+  position: relative;
+  border-radius: 50%;
+    box-shadow: 0 0 1rem 0 rgba(0, 0, 0, 0.2);
+    content: "";
+    height: 150px;
+    position: absolute;
+    width: 150px;
+    margin-top: -15%;
+    margin-left:-88%;
+}
+
+.box {
+    position: relative;
+    width: 500px;
+    height: 500px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0px 0px 10px 10px rgba(81, 72, 72, 0.336);
+    margin-top: -15%;
+    z-index:3;
+}
+
+form {
+    position: absolute;
+    inset: 2px;
+    background: linear-gradient(
+      to right,
+     #D9EAFD,
+      #fff,
+       #D9EAFD
+    );
+    backdrop-filter: blur(1px);
+    padding: 50px 40px;
+    border-radius: 8px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+}
+
+h2 {
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 500;
+    text-align: center;
+    justify-content: center;
+    letter-spacing: 0.1em;
+}
+
+.error {
+    margin-left:-120%;
+}
+
+.csrf {
+    margin-left:-80%;
+}
+
+.inputBox {
+    position: relative;
+    width: 300px;
+    margin-top: 50px;
+    margin-left: 15%;
+}
+
+.inputBox input {
+    position: relative;
+    width: 100%;
+    padding: 10px 10px 10px;
+    background: transparent;
+    outline: none;
+    box-shadow: none;
+    border: 1px solid black;
+    color: #000;
+    font-size: 1em;
+    letter-spacing: 0.05em;
+    transition: 0.5s;
+    z-index: 10;
+    margin-top: 5%;
+    border-radius: 4px;
+}
+
+.inputBox span {
+    position: absolute;
+    left: 0;
+    padding: 25px 0px 10px;
+    pointer-events: none;
+    font-size: 0.9em;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    transition: 0.5s;
+    margin-top: 5%;
+    z-index: 5;
+}
+
+.inputBox input:valid ~ span,
+.inputBox input:focus ~ span {
+    color: #000;
+    transform: translateX(0px) translateY(-24px);
+    font-size: 0.75em;
+}
+
+.inputBox i {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 1px;
+    background: #A0E9FF;
+    overflow: hidden;
+    transition: 0.5s;
+    pointer-events: none;
+    z-index: 9;
+}
+
+.inputBox input:valid ~ i,
+.inputBox input:focus ~ i {
+    height: 3px;
+}
+
+.links {
+    display: flex;
+    justify-content: space-between;
+}
+
+.links a {
+    margin: 10px 0;
+    font-size: 0.75em;
+    color: #000;
+    text-decoration: beige;
+}
+
+.links a:hover,
+.links a:nth-child(2) {
+    color: #A0E9FF;
+}
+
+#loginBtn {
+    border: none;
+    outline: none;
+    padding: 11px 25px;
+    color:black;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: 600;
+    width:300px;
+    margin-top: 50px;
+    margin-left: 15%;
+    background:#EFE4D2;
+}
+
+#loginBtn:active {
+    opacity: 0.8;
+}
+
+.dupContainer {
+    position: absolute;
+    inset: 2px;
+    background: #5bccf1;
+    padding: 50px 40px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    width: 600px;
+    height: 1120px;
+    margin-top: -6%;
+    margin-left:-1%;
+}
+
+/* Add New vCenter Link Styling */
+#add {
+    margin-top: 10px;
+    text-align: center;
+    margin-left: 15%;
+    width: 300px;
+}
+
+.add-vcenter-link {
+    font-size: 1rem;
+    color: grey;
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight:600;
+}
+
+.add-vcenter-link:hover {
+    color: black;
+}
+
+/* Modal Styling for Adding New vCenter */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    display: flex;
+}
+
+.modal {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    transform: scale(0.8);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal {
+    transform: scale(1);
+}
+
+.modal h3 {
+    margin-bottom: 20px;
+    font-weight: 600;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.modal .inputBox {
+    margin-left: 0;
+    width: 100%;
+}
+
+.modal .inputBox input:focus ~ span {
+    display: none;
+}
+
+.modal .inputBox span {
+    margin-top:-5.5%;
+    color:grey;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.modal-buttons button {
+    padding: 12px 25px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.modal-buttons button:hover {
+    transform: scale(1.05);
+}
+
+.cancel-btn {
+    background: linear-gradient(45deg, #ccc, #bbb);
+}
+
+.add-btn {
+    background: linear-gradient(45deg, #2c3e50, #3498db);
+    color: white;
+}
+
+/* Custom Dropdown Styling to Match Original Select */
+.custom-dropdown {
+    position: relative;
+    width: 100%;
+    margin-top: 5%;
+    margin-bottom: 20px;
+    z-index: 20;
+}
+
+.dropdown-selected {
+    width: 100%;
+    padding: 6px;
+    background: transparent;
+    font-weight: 600;
+    border-radius: 4px;
+    border: 1px solid #A0E9FF;
+    color: #000;
+    font-size: 1em;
+    outline: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dropdown-selected::after {
+    content: "▼";
+    font-size: 0.8em;
+    margin-right: 5px;
+}
+
+.dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #A0E9FF;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 25;
+    display: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.dropdown-list.active {
+    display: block;
+}
+
+.vcenter-option {
+    display: flex;
+    justify-content: center; /* Center the contents */
+    align-items: center;
+    padding: 8px 10px;
+    font-size: 1.3rem;
+    color: #000;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.vcenter-option:last-child {
+    border-bottom: none;
+}
+
+.vcenter-option:hover {
+    background: #f0f0f0;
+}
+
+.vcenter-option span {
+    flex-grow: 1;
+    margin-right: 10px; /* Space between vCenter name and delete button */
+    margin-left: 5%; /* Slight shift to the right from center */
+    margin-top:-5%;
+}
+
+/* Improved Delete Button Styling */
+.delete-btn {
+    width: 20px;
+    height: 20px;
+    color: #fff;
+    border: none;
+    border-radius: 25%; /* Circular button */
+    font-size: 0.8em;
+    line-height: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    flex-shrink: 0; /* Prevent button from shrinking */
+    margin-left: 90%;
+    
+}
+
+.delete-btn::before {
+    content: "🗑️"; /* Trash can emoji */
+    font-size: 0.9em;
+}
+
+.delete-btn:hover {
+    background-color: #cc0000; /* Darker red on hover */
+   
+}
+
+/* Responsive Design for Large, Medium, and Small Screens */
+@media (min-width: 1201px) {
+  .box {
+    width: 500px;
+    height: 500px;
+  }
+  .dupContainer {
+    width: 600px;
+    height: 1120px;
+  }
+  .inputBox {
+    width: 300px;
+  }
+  #loginBtn {
+    width: 300px;
+  }
+}
+
+@media (max-width: 1200px) and (min-width: 768px) {
+  body {
+    background-size: cover;
+    min-height: 100vh;
+  }
+  .holder {
+    margin-left: -80%;
+    margin-top: -20%;
+    width: 120px;
+    height: 120px;
+  }
+  .box {
+    width: 400px;
+    height: 450px;
+    margin-top: -20%;
+  }
+  .dupContainer {
+    width: 500px;
+    height: 900px;
+    margin-top: -8%;
+    margin-left: 0%;
+  }
+  .inputBox {
+    width: 250px;
+    margin-left: 10%;
+  }
+  .vcenter-option {
+    padding: 6px 8px; /* Slightly reduced padding */
+    font-size: 0.9em;
+  }
+  .vcenter-option span {
+    margin-right: 8px; /* Adjusted spacing */
+  }
+  .delete-btn {
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    font-size: 0.75em;
+  }
+  #loginBtn {
+    width: 250px;
+    margin-left: 10%;
+  }
+  #add {
+    margin-left: 10%;
+    width: 250px;
+  }
+  form {
+    padding: 40px 30px;
+  }
+  h2 {
+    font-size: 1.5em;
+  }
+  .error {
+    margin-left: -100%;
+  }
+  .csrf {
+    margin-left: -60%;
+  }
+}
+
+@media (max-width: 767px) {
+  body {
+    background-size: cover;
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .holder {
+    margin-left: 0;
+    margin-top: 0;
+    width: 100px;
+    height: 100px;
+    position: relative;
+    top: -20px;
+  }
+  .box {
+    width: 90%;
+    max-width: 350px;
+    height: auto;
+    margin-top: 0;
+    box-shadow: 0px 0px 5px 5px rgba(81, 72, 72, 0.2);
+  }
+  .dupContainer {
+    width: 100%;
+    height: auto;
+    margin-top: 0;
+    margin-left: 0;
+    padding: 20px;
+  }
+  form {
+    padding: 20px;
+  }
+  .inputBox {
+    width: 100%;
+    margin-left: 0;
+  }
+  .vcenter-option {
+    padding: 5px 5px;
+    font-size: 0.85em;
+  }
+  .vcenter-option span {
+    margin-right: 6px; /* Adjusted spacing for smaller screens */
+  }
+  .delete-btn {
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    font-size: 0.7em;
+  }
+  #loginBtn {
+    width: 100%;
+    margin-left: 0;
+    padding: 10px;
+  }
+  #add {
+    margin-left: 0;
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+  }
+  .add-vcenter-link {
+    display: inline-block;
+  }
+  h2 {
+    font-size: 1.2em;
+  }
+  .error {
+    margin-left: 0;
+    text-align: center;
+  }
+  .csrf {
+    margin-left: 0;
+  }
+  .links {
+    flex-direction: column;
+    text-align: center;
+  }
+  .links a {
+    margin: 5px 0;
+  }
+}
+
+.holder .box img {
+    height: 45px;
+    width: 120px;
+    position: absolute;
+    top: 2;
+    margin-top:5%;  
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 8px;
+    z-index: 999;
+    opacity:0.5;
+}
+</style>
+
+<body>
+<div class="dupContainer"></div>
+
+<div class="error">
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
+    {% endif %}
+</div>
+
+<div class="holder">
+    
+    <div class="box">
+
+         <div>
+            <img src="https://brandslogos.com/wp-content/uploads/images/large/lenovo-logo-black-and-white-2.png"  alt="logo">
+        </div>
+        <form method="post" action="{% url 'authenticate_vcenter' %}">
+            <div class="csrf">
+                {% csrf_token %}
+            </div>
+
+       
+
+
+            <div class="inputBox">
+                <label style="color: #000; font-size: 0.9em; font-family: Arial, Helvetica, sans-serif; font-weight: 600; letter-spacing: 0.05em; margin-left: 0.5%;;">Select vCenter:</label>
+                <div class="custom-dropdown">
+                    <div class="dropdown-selected" id="dropdownSelected">Select a vCenter</div>
+                    <div class="dropdown-list" id="dropdownList">
+                        <!-- vCenters will be populated by JavaScript -->
+                    </div>
+                </div>
+                <input type="hidden" name="vcenter_url" id="vcenterUrlInput" required>
+                <input type="text" name="username" required="required">
+                <span>Username</span>
+                <i></i>
+            </div>
+
+            <div class="inputBox">
+                <input type="password" name="password" required="required">
+                <span>Password</span>
+                <i></i>
+            </div>
+
+            <div class="links"></div>
+            <button id="loginBtn" type="submit">LOGIN</button>
+            <div id="add">
+                <a href="#" class="add-vcenter-link" onclick="showAddVcenterModal()">click here to add new vCenter</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal for Adding New vCenter -->
+<div class="modal-overlay" id="addVcenterModal">
+    <div class="modal">
+        <h3>Add New vCenter</h3>
+        <div class="inputBox">
+            <input type="text" id="newVcenterUrl" required="required">
+            <span>vCenter URL (e.g., https://vcenter.example.com)</span>
+            <i></i>
+        </div>
+        <div class="modal-buttons">
+            <button class="cancel-btn" onclick="closeAddVcenterModal()">Cancel</button>
+            <button class="add-btn" onclick="addNewVcenter()">Add</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let loginBtn = document.getElementById("loginBtn");
+let username = document.querySelector(".inputBox input[type='text']");
+let password = document.querySelector(".inputBox input[type='password']");
+let dropdownSelected = document.getElementById("dropdownSelected");
+let dropdownList = document.getElementById("dropdownList");
+let vcenterUrlInput = document.getElementById("vcenterUrlInput");
+
+// Default vCenters (should match the backend defaults)
+const defaultVcenters = [
+    { url: "https://coevcenter.lenovo.com", name: "Lenovo vCenter", source: "default" },
+    { url: "https://backupvcenter.lenovo.com", name: "Backup Lenovo vCenter", source: "default" },
+    { url: "https://testvc.coelab.com", name: "Test vCenter", source: "default" }
+];
+
+// Server-side vCenters passed from Django
+const serverVcenters = {{ vcenter_urls|safe }}.map(url => ({
+    url: url,
+    name: url.replace(/^https:\/\/|\/$/g, "").split(".")[0] + " vCenter",
+    source: "server"
+}));
+
+// Function to load vCenters from localStorage, server, and defaults
+function loadVcenters() {
+    const storedVcenters = JSON.parse(localStorage.getItem("vcenters")) || [];
+    const customVcenters = storedVcenters.map(vcenter => ({ ...vcenter, source: "custom" }));
+    
+    // Load deleted vCenters (default/server vCenters marked as deleted)
+    const deletedVcenters = JSON.parse(localStorage.getItem("deletedVcenters")) || [];
+    const deletedUrls = new Set(deletedVcenters);
+    
+    // Combine all vCenters
+    const allVcenters = [...defaultVcenters, ...serverVcenters, ...customVcenters];
+    
+    // Remove duplicates based on URL (keep the first occurrence) and filter out deleted vCenters
+    const uniqueVcenters = [];
+    const seenUrls = new Set();
+    for (const vcenter of allVcenters) {
+        if (!seenUrls.has(vcenter.url) && !deletedUrls.has(vcenter.url)) {
+            seenUrls.add(vcenter.url);
+            uniqueVcenters.push(vcenter);
+        }
+    }
+
+    // Populate the custom dropdown
+    dropdownList.innerHTML = "";
+    uniqueVcenters.forEach(vcenter => {
+        const item = document.createElement("div");
+        item.className = "vcenter-option";
+        
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = vcenter.name;
+        item.appendChild(nameSpan);
+
+        // Add delete button for all vCenters
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-btn";
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation(); // Prevent event from bubbling to the item click
+            if (confirm(`Are you sure you want to delete the vCenter: ${vcenter.url}?`)) {
+                deleteVcenter(vcenter.url, vcenter.source);
+            }
+        };
+        item.appendChild(deleteBtn);
+
+        // Add click event to select the vCenter without triggering delete
+        item.onclick = (e) => {
+            if (!e.target.classList.contains("delete-btn")) { // Only select if not clicking delete
+                dropdownSelected.textContent = vcenter.name;
+                vcenterUrlInput.value = vcenter.url;
+                dropdownList.classList.remove("active");
+            }
+        };
+
+        dropdownList.appendChild(item);
+    });
+
+    // Set default selection if there are vCenters
+    if (uniqueVcenters.length > 0) {
+        dropdownSelected.textContent = uniqueVcenters[0].name;
+        vcenterUrlInput.value = uniqueVcenters[0].url;
+    } else {
+        dropdownSelected.textContent = "Select a vCenter";
+        vcenterUrlInput.value = "";
+    }
+}
+
+// Function to delete a vCenter
+function deleteVcenter(url, source) {
+    if (source === "custom") {
+        // Delete custom vCenter from vcenters in localStorage
+        let storedVcenters = JSON.parse(localStorage.getItem("vcenters")) || [];
+        storedVcenters = storedVcenters.filter(vcenter => vcenter.url !== url);
+        localStorage.setItem("vcenters", JSON.stringify(storedVcenters));
+    } else {
+        // For default/server vCenters, add to deletedVcenters in localStorage
+        let deletedVcenters = JSON.parse(localStorage.getItem("deletedVcenters")) || [];
+        if (!deletedVcenters.includes(url)) {
+            deletedVcenters.push(url);
+            localStorage.setItem("deletedVcenters", JSON.stringify(deletedVcenters));
+        }
+    }
+
+    // Refresh the dropdown
+    loadVcenters();
+
+    // Reset selection if the deleted vCenter was selected
+    if (vcenterUrlInput.value === url) {
+        const storedVcenters = JSON.parse(localStorage.getItem("vcenters")) || [];
+        const customVcenters = storedVcenters.map(vcenter => ({ ...vcenter, source: "custom" }));
+        const deletedVcenters = JSON.parse(localStorage.getItem("deletedVcenters")) || [];
+        const deletedUrls = new Set(deletedVcenters);
+        const remainingVcenters = [...defaultVcenters, ...serverVcenters, ...customVcenters].filter(vcenter => !deletedUrls.has(vcenter.url));
+
+        if (remainingVcenters.length > 0) {
+            dropdownSelected.textContent = remainingVcenters[0].name;
+            vcenterUrlInput.value = remainingVcenters[0].url;
+        } else {
+            dropdownSelected.textContent = "Select a vCenter";
+            vcenterUrlInput.value = "";
+        }
+    }
+}
+
+// Toggle dropdown visibility
+dropdownSelected.onclick = () => {
+    dropdownList.classList.toggle("active");
+};
+
+// Close dropdown when clicking outside
+document.addEventListener("click", (e) => {
+    if (!dropdownSelected.contains(e.target) && !dropdownList.contains(e.target)) {
+        dropdownList.classList.remove("active");
+    }
+});
+
+// Function to show the Add New vCenter modal
+function showAddVcenterModal() {
+    const modal = document.getElementById("addVcenterModal");
+    modal.style.display = "flex";
+    setTimeout(() => modal.classList.add("active"), 10);
+}
+
+// Function to close the Add New vCenter modal
+function closeAddVcenterModal() {
+    const modal = document.getElementById("addVcenterModal");
+    modal.classList.remove("active");
+    setTimeout(() => {
+        modal.style.display = "none";
+        document.getElementById("newVcenterUrl").value = "";
+    }, 300);
+}
+
+// Function to add a new vCenter
+function addNewVcenter() {
+    const newVcenterUrl = document.getElementById("newVcenterUrl").value.trim();
+    
+    // Basic URL validation
+    const urlPattern = /^https:\/\/.+/;
+    if (!urlPattern.test(newVcenterUrl)) {
+        alert("Please enter a valid vCenter URL starting with https://");
+        return;
+    }
+
+    // Create a name for the new vCenter
+    let vcenterName = newVcenterUrl.replace(/^https:\/\/|\/$/g, "");
+    vcenterName = vcenterName.split(".")[0] || "Custom vCenter";
+    vcenterName = vcenterName.charAt(0).toUpperCase() + vcenterName.slice(1) + " vCenter";
+
+    // Load existing vCenters from localStorage
+    const storedVcenters = JSON.parse(localStorage.getItem("vcenters")) || [];
+
+    // Add the new vCenter
+    storedVcenters.push({ url: newVcenterUrl, name: vcenterName });
+
+    // Save back to localStorage
+    localStorage.setItem("vcenters", JSON.stringify(storedVcenters));
+
+    // Remove the URL from deletedVcenters if it exists
+    let deletedVcenters = JSON.parse(localStorage.getItem("deletedVcenters")) || [];
+    deletedVcenters = deletedVcenters.filter(url => url !== newVcenterUrl);
+    localStorage.setItem("deletedVcenters", JSON.stringify(deletedVcenters));
+
+    // Reload the dropdown and set the new vCenter as selected
+    loadVcenters();
+    dropdownSelected.textContent = vcenterName;
+    vcenterUrlInput.value = newVcenterUrl;
+
+    // Close the modal
+    closeAddVcenterModal();
+}
+
+// Function to activate the login button based on input
+function activateButton() {
+    if (username.value.trim() !== "" && password.value.trim() !== "" && vcenterUrlInput.value.trim() !== "") {
+        loginBtn.style.backgroundColor = "#0077b6";
+        loginBtn.style.color = "white";
+    } else {
+        loginBtn.style.backgroundColor = "#007CBB";
+        loginBtn.style.color = "white";
+    }
+}
+
+// Event listeners for input fields
+username.addEventListener("input", activateButton);
+password.addEventListener("input", activateButton);
+vcenterUrlInput.addEventListener("input", activateButton);
+
+// Load vCenters when the page loads
+document.addEventListener("DOMContentLoaded", () => {
+    loadVcenters();
+    activateButton();
+});
+</script>
+</body>
+</html>

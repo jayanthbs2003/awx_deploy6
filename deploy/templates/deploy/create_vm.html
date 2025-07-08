@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create VM</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+        
+        .form-popup {
+            position:absolute;
+            top: 70%;
+            left: 50%;
+            transform: translate(-50%, -70%);
+            z-index: 10;
+            width: 200%;
+            height: 60%;
+            max-width: 1180px;
+            padding: 25px 50px 40px;
+            max-width: 1180px;
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: left 0.3s ease, width 0.3s ease;
+            
+        }
+        #form-popup{
+            background:#E8F9FF;
+
+        }
+        .form-box label {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            display: block;
+           
+        }
+        
+        .form-popup .form-box {
+            display: grid;
+            grid-template-columns: 3fr 3fr;
+            gap: 40px 30px;
+          
+        }
+        
+         .form-box select,
+        .input-field input {
+            height: 45px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 0 15px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+             background:#E8F9FF;
+        }
+
+        .form-box select:focus,
+        .input-field input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .form-box select {
+            appearance: none;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="black"><polygon points="0,0 12,0 6,12"/></svg>') no-repeat right 15px center;
+            background-size: 12px;
+            cursor: pointer;
+        }
+        
+        .deployBtn {
+            margin-top: 20%;
+            cursor: pointer;
+        }
+        
+        /* Deploy Button */
+        .deployBtn {
+            margin-top: 100px;
+            text-align: center;
+            margin-left: -105%;
+        }
+
+        .deployBtn button {
+            width: 200px;
+            height: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: linear-gradient(45deg, #3498db, #2ecc71);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .deployBtn button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.6);
+            background: linear-gradient(45deg, #2ecc71, #3498db);
+        }
+        
+        .csfr {
+            margin-top: -90%;
+        }
+        
+        body {
+            display: flex;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+           background: linear-gradient(45deg, #bde0fe, #caf0f8, #a2d2ff, #90e0ef);
+            background-size: 400%;
+            animation: gradientBackground 15s ease infinite;
+        }
+        @keyframes gradientBackground {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: #2c3e50;
+            color: white;
+            position: fixed;
+            left: -250px;
+            transition: left 0.3s ease;
+            z-index: 10;
+        }
+        
+        .sidebar.active {
+            left: 0;
+        }
+        
+        .sidebar img {
+            margin-left:30%;
+            margin-top:3.5%;
+        }
+        
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .sidebar ul li {
+            padding: 0;
+            border-bottom: 1px solid #34495e;
+        }
+        
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            align-items: center;
+            cursor: pointer;
+            padding: 15px;
+            transition: background 0.3s ease;
+        }
+        
+        .sidebar ul li a:hover,
+        .sidebar ul li a.active {
+            background: white;
+            color: black;
+        }
+        
+        .sidebar ul li a i {
+            margin-right: 10px;
+        }
+        
+        .toggle-btn {
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            background: transparent;
+            color: white;
+        }
+        .toggle-btn.active {
+            color: white;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+            margin-left: 0;
+            transition: margin-left 0.3s ease;
+            position: relative;
+        }
+        
+        .content.shifted {
+            margin-left: 250px;
+        }
+        
+        .content h1 {
+            text-align: center;
+        }
+        
+        .logoutbtn {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            height: 10%;
+            background: #e74c3c;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+            border: 1px solid black;
+            margin-top: 0.5%;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        
+        .modal {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal h2 {
+            margin-bottom: 20px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        
+        .modal-buttons button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .cancel-btn {
+            background-color: #ccc;
+        }
+        
+        .logout-confirm-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+      /* Loading overlay styles */
+      .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Progress bar styles */
+        .progress-container {
+            width: 300px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f3f3f3;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #3498db;
+            transition: width 0.1s linear;
+        }
+
+        .progress-text {
+            font-size: 1.2rem;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Blur effect when loading class is active */
+        .loading .content,
+        .loading .form-popup,
+        .loading .cards {
+            filter: blur(5px);
+        }
+
+        /* Success popup styles */
+        .success-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            display: none;
+            text-align: center;
+        }
+
+        .success-popup h2 {
+            margin-bottom: 20px;
+            color: #27ae60;
+        }
+
+        .success-popup button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .success-popup button:hover {
+            background: #219653;
+        }
+        /* Updated Media Queries for Responsiveness */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+                left: -200px;
+            }
+            .sidebar.active {
+                left: 0;
+            }
+            .content {
+                margin-left: 0;
+                padding: 10px;
+            }
+            .content.shifted {
+                margin-left: 200px;
+            }
+            .toggle-btn {
+                left: 10px;
+                top: 10px;
+                font-size: 20px;
+            }
+            .form-popup {
+                width: 90%;
+                left: 50%;
+                transform: translate(-50%, -70%);
+                padding: 20px;
+                height: auto;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .cards {
+                width: 100%;
+                left: 56%;
+                transform: translate(-50%, -150%);
+                flex-direction: column; /* Stack cards vertically */
+            }
+            .card {
+                flex: 1 1 100%; /* Full width on small screens */
+                min-width: 0; /* Allow shrinking */
+            }
+            .form-popup {
+                width: 100%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                padding: 15px;
+            }
+            .sidebar.active ~ .form-popup {
+                width: 100%;
+                top: 80%;
+                transform: translate(-50%, 0);
+            }
+            .form-box {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            .deployBtn button {
+                width: 100%;
+                margin-left: 0;
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .modal {
+                width: 90%;
+                padding: 20px;
+            }
+            .modal-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .modal-buttons button {
+                width: 100%;
+            }
+        }
+        /* Animated Background Gradient */
+body {
+    display: flex;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(
+                to right,
+                #bde0fe,
+                #caf0f8,
+                #a2d2ff
+            );
+            transition: background 0.3s ease, color 0.3s ease;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+
+
+/* Smooth Input Transitions */
+.input-field input,
+.form-box select {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-field input:focus,
+.form-box select:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 8px rgba(52, 152, 219, 0.5);
+    outline: none;
+}
+
+/* Button Glow Effect */
+.deployBtn button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+
+.deployBtn button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300%;
+    height: 300%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%) scale(0);
+    border-radius: 50%;
+    transition: transform 0.5s ease;
+}
+
+.deployBtn button:hover::after {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Sidebar Slide-In Animation */
+.sidebar {
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Progress Bar Gradient */
+.progress-fill {
+    background: linear-gradient(to right, #3498db, #2ecc71);
+    transition: width 0.1s ease;
+}
+
+/* Success Popup Animation */
+.success-popup {
+    animation: popupFadeIn 0.4s ease forwards;
+}
+
+@keyframes popupFadeIn {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Responsive Typography */
+h1 {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.form-box label {
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+}
+
+.card {
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
+}
+
+/* Subtle Shadow for Form Popup */
+.form-popup {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced Modal Overlay */
+.modal-overlay {
+    backdrop-filter: blur(3px);
+    transition: opacity 0.3s ease;
+}
+
+/* Glassmorphism Effect */
+.form-popup, .card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Dynamic Color Accents */
+.sidebar ul li a {
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Micro-Animations for Dropdowns */
+.form-box select {
+    position: relative;
+    appearance: none;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="black"><polygon points="0,0 10,0 5,10"/></svg>') no-repeat right 10px center;
+}
+
+.form-box select:focus + .dropdown-reveal {
+    animation: dropdownReveal 0.3s ease forwards;
+}
+
+@keyframes dropdownReveal {
+    0% { transform: scaleY(0); opacity: 0; }
+    100% { transform: scaleY(1); opacity: 1; }
+}
+
+/* Parallax Effect on Cards */
+.card {
+    transition: transform 0.2s ease;
+}
+
+/* Loading Overlay Particle Effect */
+.loading-overlay {
+    overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    animation: particleFloat 3s infinite ease;
+}
+
+@keyframes particleFloat {
+    0% { transform: translateY(100vh); opacity: 0; }
+    50% { opacity: 0.8; }
+    100% { transform: translateY(-100vh); opacity: 0; }
+}
+
+/* Added for dropdown */
+        .sidebar .dropdown-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+           
+            backdrop-filter: blur(2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.4s ease;
+            opacity: 0;
+          
+        }
+        .sidebar .dropdown-menu.show {
+            max-height: 350px;
+            padding: 10px 0;
+            opacity: 1;
+        }
+        .sidebar .dropdown-item {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 12px 30px;
+            background: #2c3e50;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transform: translateX(-10px);
+            opacity: 0;
+            font-size: 0.95rem;
+        }
+        .sidebar .dropdown-menu.show .dropdown-item {
+            transform: translateX(0);
+            opacity: 1;
+            transition-delay: calc(0.1s * var(--item-index));
+        }
+        .sidebar .dropdown-item:hover {
+            background: white;
+            color: black;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            transform: translateX(5px) scale(1.02);
+        }
+        .sidebar .dropdown-item::after {
+            content: '';
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.6s ease;
+        }
+        .sidebar .dropdown-item:active::after {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 0;
+        }
+        .sidebar .dropdown-item .tooltip {
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 10;
+        }
+        .sidebar .dropdown-item:hover .tooltip {
+            opacity: 1;
+            transform: translate(10px, -50%);
+        }
+        .sidebar .dropdown-submenu {
+            position: relative;
+        }
+        .sidebar .dropdown-submenu .dropdown-submenu {
+            position: absolute;
+            left: 100%;
+            top: 0;
+            color:black
+            width: 200px;
+            
+            display: none;
+            transform: translateX(-10px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .sidebar .dropdown-submenu:hover .dropdown-menu {
+            display: block;
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .sidebar .dropdown-toggle-icon  {
+            float: right;
+            margin-top: 2px;
+            margin-right: 8%;
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+        .sidebar .dropdown-toggle-icon:hover {
+            color: #3498db;
+        }
+        .sidebar .dropdown-toggle-icon.rotate {
+            transform: rotate(180deg);
+        }
+        .dark-mode .sidebar .dropdown-menu {
+            background: rgba(17, 17, 17, 0.95);
+        }
+        .dark-mode .sidebar .dropdown-item {
+            color: white;
+            background: #111;
+        }
+        .dark-mode .sidebar .dropdown-item:hover {
+            background: white;
+            color: black;
+        }
+        .dark-mode .sidebar .dropdown-item .tooltip {
+            background: #1a252f;
+            font-size:3rem;
+        }
+        @media (max-width: 768px) {
+            .sidebar .dropdown-menu {
+                width: 100%;
+            }
+            .sidebar .dropdown-submenu .dropdown-menu {
+                position: static;
+                width: 100%;
+                transform: none;
+            }
+            .sidebar .dropdown-item .tooltip {
+                display: none;
+            }
+        }
+           /* Header Styling */
+        .dashboard-header {
+            background: #2c3e50;
+            color:white;
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+            width: 130%;
+            height:70px;
+            margin-left: -10%;;
+            margin-top:-2%;
+        }
+        .dashboard-header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-left: -10%;
+            transition: transform 0.3s ease;
+            color: white !important; /* Ensure white color with high specificity */
+            align-items:Center;
+            justify-content:center;
+            text-align:center;
+            margin-top:10px;
+            margin-left:-5%;
+            
+        }
+       
+        .dashboard-header:hover h1 {
+            transform: scale(1.02);
+        }
+        .dark-mode .dashboard-header {
+            background: #1a252f;
+           
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+        }
+        /* Enhanced Sidebar Animations */
+        .sidebar {
+            transition: left 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55), box-shadow 0.3s ease;
+        }
+        .sidebar.active {
+           
+        }
+        .sidebar ul li a {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+        .sidebar ul li a:hover {
+            transform: translateX(5px);
+            background: linear-gradient(90deg, #ffffff);
+            color: #2c3e50;
+        }
+        .sidebar ul li a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: left 0.4s ease;
+        }
+        .sidebar ul li a:hover::before {
+            left: 100%;
+        }
+
+        /* Responsive Header */
+        @media (max-width: 768px) {
+            .dashboard-header {
+                padding: 15px 20px;
+            }
+            .dashboard-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .dashboard-header {
+                padding: 10px 15px;
+            }
+            .dashboard-header h1 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="toggle-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </div>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <img src="https://logos-world.net/wp-content/uploads/2022/07/Lenovo-Logo.png" height="60px" alt="Lenovo Logo">
+        <div style="padding:10px;">
+            <input type="text" placeholder="Search..." style="width:90%; padding:8px; border-radius:5px; border:none; background:white; color:black;">
+        </div>
+        <ul>
+            <li><a href="{% url 'deploy_vm' %}"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li>
+                <a href="{% url 'deploy_vm' %}"><i class="fas fa-users"></i>New Virtual Machine <i class="fas fa-chevron-down dropdown-toggle-icon"></i></a>
+                <!-- Added for dropdown -->
+                <ul class="dropdown-menu">
+                    
+                     <li><a href="{% url 'vm_list' %}" class="dropdown-item" ><i class="fas fa-copy"></i> VM Details</a></li>
+                    <li><a href="#" class="dropdown-item" onclick="alert('Convert to Template: Coming soon!')"><i class="fas fa-file-export"></i> Convert to Template</a></li>
+                    <li><a href="#" class="dropdown-item" onclick="alert('Clone VM: Coming soon!')"><i class="fas fa-copy"></i> Clone VM</a></li>
+                    <li><a href="#" class="dropdown-item" onclick="alert('Take Snapshot: Coming soon!')"><i class="fas fa-camera"></i> Take Snapshot</a></li>
+                    <li class="dropdown-submenu">
+                        <a href="#" class="dropdown-item dropdown-toggle"><i class="fas fa-power-off"></i> Power Operations</a>
+                        <ul class="dropdown-menu sub-menu">
+                            <li><a href="#" class="dropdown-item" onclick="alert('Power On: Coming soon!')"><i class="fas fa-play"></i> Power On</a></li>
+                            <li><a href="#" class="dropdown-item" onclick="alert('Power Off: Coming soon!')"><i class="fas fa-stop"></i> Power Off</a></li>
+                            <li><a href="#" class="dropdown-item" onclick="alert('Restart: Coming soon!')"><i class="fas fa-redo"></i> Restart</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            
+            <li><a href="{% url 'host_list' %}"><i class="fas fa-users"></i> Host Details</a></li>
+            <li><a href="#"><i class="fas fa-chart-line"></i> Monitor</a></li>
+            <li><a href="#"><i class="fas fa-tools"></i> Configure</a></li>
+            <li><a href="./settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="#"><i class="fas fa-question-circle"></i> Help</a></li>
+            <li><a href="#"><i class="fas fa-info-circle"></i> How to Deploy VM</a></li>
+        </ul>
+    </div>
+
+    <div class="content" id="content">
+        <div class="dashboard-header">
+            <h1>New Virtual Machine</h1>
+        </div>
+     </div>
+    <button class="logoutbtn" onclick="showLogoutModal()">Logout</button>
+    <div class="modal-overlay" id="logoutModal">
+        <div class="modal">
+            <h2>Are you sure you want to logout?</h2>
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeLogoutModal()">Cancel</button>
+                <button class="logout-confirm-btn" onclick="confirmLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+  
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">0%</div>
+        </div>
+    </div>
+
+    <div class="success-popup" id="successPopup">
+        <h2>VM Trigerred Successfully!</h2>
+        <button onclick="closeSuccessPopup()">OK</button>
+    </div>
+    <form hx-post="/create_vm/" hx-trigger="submit" hx-target="#response" id="deployForm">
+        <div class="csfr">
+            {% csrf_token %}
+        </div>
+        <div class="form-popup" id="form-popup">
+            <div class="form-box login">
+                <div class="datacenter">
+                    <label>Datacenter:</label>
+                    <select id="datacenter" name="datacenter" hx-get="/load-datacenters/" hx-trigger="load" hx-target="this">
+                        <option>Loading...</option>
+                    </select>
+                </div>
+                <div class="folder">
+                    <label>Folder:</label>
+                    <select id="folder" name="folder" hx-get="/load-folders/" hx-trigger="load, change from:#datacenter" hx-target="this" hx-vals='js:{"datacenter": document.getElementById("datacenter").value}'>
+                        <option>Loading...</option>
+                    </select>
+                </div>
+                <div class="cluster">        
+                    <label>Cluster:</label>
+                    <select id="cluster" name="cluster" hx-get="/load-clusters/" hx-trigger="load" hx-target="this">
+                        <option>Loading...</option>
+                    </select>
+                </div>
+                <div class="data">  
+                    <label>Datastore:</label>
+                    <select id="datastore" name="datastore" hx-get="/load-datastores/" hx-trigger="load" hx-target="this">
+                        <option>Loading...</option>
+                    </select>
+                </div>
+                <div class="network">
+                    <label>Network:</label>
+                    <select id="network" name="network" hx-get="/load-networks/" hx-trigger="load" hx-target="this">
+                        <option>Loading...</option>
+                    </select>
+                </div>
+                <div class="temp">
+                    <label>Template:</label>
+                    <select id="template" name="template" hx-get="/load-templates/" hx-trigger="load" hx-target="this">
+                        <option>Loading...</option>
+                    </select>
+                </div>  
+                <div class="input-field">
+                    <label>VM Name:</label>
+                    <input type="text" name="vm_name" placeholder="Enter VM Name" required>
+                </div>
+                <div class="deployBtn">
+                    <button type="submit">Deploy VM</button>
+                </div>
+            </div>
+         
+        <div id="response"></div>
+        </div>  
+
+    </form>
+
+
+
+    <script>
+        function toggleSidebar() {
+    let sidebar = document.getElementById("sidebar");
+    let content = document.getElementById("content");
+    let toggleBtn = document.querySelector(".toggle-btn");
+    let formPopup = document.querySelector(".form-popup");
+    let cards = document.querySelector(".cards");
+    
+    sidebar.classList.toggle("active");
+    content.classList.toggle("shifted");
+    toggleBtn.classList.toggle("active"); // Toggle the active class on the button
+    
+    // Synchronize form popup and cards based on sidebar state
+    if (sidebar.classList.contains("active")) {
+        formPopup.style.left = "calc(50% + 125px)"; // Shift right beyond sidebar (half of 250px)
+        formPopup.style.width = "calc(90% - 250px)"; // Reduce width by sidebar width
+        formPopup.style.transform = "translate(-50%, -70%)";
+        cards.style.left = "calc(50% + 125px)"; // Match form’s left
+        cards.style.width = "calc(90% - 250px)"; // Match form’s width
+    } else {
+        formPopup.style.left = "50%"; // Center when inactive
+        formPopup.style.width = "90%"; // Expand to 90%
+        formPopup.style.transform = "translate(-50%, -70%)";
+        cards.style.left = "50%"; // Match form’s left
+        cards.style.width = "90%"; // Match form’s width
+    }
+
+    // Override for very small screens (≤600px)
+    if (window.innerWidth <= 600) {
+        formPopup.style.left = "50%";
+        formPopup.style.width = "100%";
+        formPopup.style.top = sidebar.classList.contains("active") ? "80%" : "70%";
+        formPopup.style.transform = sidebar.classList.contains("active") ? "translate(-50%, 0)" : "translate(-50%, -50%)";
+        cards.style.left = "50%";
+        cards.style.width = "100%";
+    }
+}
+
+// Parallax Effect on Cards
+document.querySelectorAll(".card").forEach(card => {
+    card.addEventListener("mousemove", (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        const tiltX = (y / rect.height) * 10;
+        const tiltY = -(x / rect.width) * 10;
+        card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+    });
+
+    card.addEventListener("mouseleave", () => {
+        card.style.transform = "perspective(1000px) rotateX(0) rotateY(0)";
+    });
+});
+
+// Particle Effect for Loading Overlay
+function createParticles() {
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    for (let i = 0; i < 20; i++) {
+        const particle = document.createElement("div");
+        particle.classList.add("particle");
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.animationDelay = `${Math.random() * 2}s`;
+        loadingOverlay.appendChild(particle);
+    }
+}
+
+document.getElementById("deployForm").addEventListener("submit", (e) => {
+    e.preventDefault(); // Keep for demo
+    createParticles();
+    // Rest of your existing submit logic...
+});
+
+// Updated form submission with progress bar and persistent blur
+document.getElementById('deployForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // For demo; remove in production with HTMX
+
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    loadingOverlay.style.display = 'flex';
+    document.body.classList.add('loading'); // Apply blur
+
+    let progress = 0;
+    const minDuration = 30000; // 30 seconds
+    const maxDuration = 45000; // 45 seconds
+    const duration = Math.random() * (maxDuration - minDuration) + minDuration; // Random duration between 30 and 45 seconds
+    const intervalTime = 50; // Update every 50ms
+    const steps = duration / intervalTime;
+    const increment = 100 / steps;
+
+    // Animate progress bar
+    const progressInterval = setInterval(() => {
+        progress += increment;
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(progressInterval);
+        }
+        progressFill.style.width = `${progress}%`;
+        progressText.textContent = `${Math.round(progress)}%`;
+    }, intervalTime);
+
+    // After deployment simulation, show success popup but keep blur
+    setTimeout(() => {
+        clearInterval(progressInterval);
+        progressFill.style.width = '100%';
+        progressText.textContent = '100%';
+        loadingOverlay.style.display = 'none'; // Hide overlay only
+        document.getElementById('successPopup').style.display = 'block';
+        // Note: 'loading' class remains on body, keeping blur active
+    }, duration);
+});
+
+function updateVMList(event) {
+    const response = event.detail.xhr.response;
+    const json = JSON.parse(response);
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const successPopup = document.getElementById('successPopup');
+
+    if (json.message === "VM deployment triggered" || json.job) {  // Check for AWX job initiation
+        loadingOverlay.style.display = 'none';
+        successPopup.style.display = 'block';
+        setTimeout(() => {
+            window.location.href = "{% url 'vm_list' %}";  // Redirect to vm_list
+        }, 2000);
+    } else {
+        alert("Deployment failed: " + (json.error || "Unknown error"));
+        loadingOverlay.style.display = 'none';
+        document.body.classList.remove('loading');
+    }
+}
+
+document.getElementById('deployForm').addEventListener('htmx:afterRequest', updateVMList);
+function closeSuccessPopup() {
+    document.getElementById('successPopup').style.display = 'none';
+    document.body.classList.remove('loading');
+    document.getElementById('deployForm').reset();
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('progressText').textContent = '0%';
+}
+        // Sidebar active item persistence
+        document.querySelectorAll(".sidebar ul li a").forEach(item => {
+            item.addEventListener("click", function () {
+                document.querySelectorAll(".sidebar ul li a").forEach(link => link.classList.remove("active"));
+                this.classList.add("active");
+                localStorage.setItem("selectedSidebarItem", this.getAttribute("href"));
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            let selectedItem = localStorage.getItem("selectedSidebarItem");
+            if (selectedItem) {
+                let activeLink = document.querySelector(`.sidebar ul li a[href="${selectedItem}"]`);
+                if (activeLink) {
+                    activeLink.classList.add("active");
+                }
+            }
+        });
+
+        function showLogoutModal() {
+            document.getElementById("logoutModal").style.display = "flex";
+        }
+
+        function closeLogoutModal() {
+            document.getElementById("logoutModal").style.display = "none";
+        }
+
+        function confirmLogout() {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = "login.html";
+        }
+
+        const sidebarLinks = document.querySelectorAll('.sidebar ul li');
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                sidebarLinks.forEach(item => item.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Adjust form popup and cards on window resize
+window.addEventListener("resize", () => {
+    let sidebar = document.getElementById("sidebar");
+    let formPopup = document.querySelector(".form-popup");
+    let cards = document.querySelector(".cards");
+    
+    // Apply the same logic for all screens
+    if (sidebar.classList.contains("active")) {
+        formPopup.style.left = "calc(50% + 125px)"; // Shift right beyond sidebar
+        formPopup.style.width = "calc(90% - 250px)"; // Reduce width
+        formPopup.style.transform = "translate(-50%, -70%)";
+        cards.style.left = "calc(50% + 125px)"; // Match form’s left
+        cards.style.width = "calc(90% - 250px)"; // Match form’s width
+    } else {
+        formPopup.style.left = "50%"; // Center when inactive
+        formPopup.style.width = "90%"; // Expand to 90%
+        formPopup.style.transform = "translate(-50%, -70%)";
+        cards.style.left = "50%"; // Match form’s left
+        cards.style.width = "90%"; // Match form’s width
+    }
+
+    // Override for very small screens (≤600px)
+    if (window.innerWidth <= 600) {
+        formPopup.style.left = "50%";
+        formPopup.style.width = "100%";
+        formPopup.style.top = sidebar.classList.contains("active") ? "80%" : "70%";
+        formPopup.style.transform = sidebar.classList.contains("active") ? "translate(-50%, 0)" : "translate(-50%, -50%)";
+        cards.style.left = "50%";
+        cards.style.width = "100%";
+    }
+});
+
+// Add bounce effect on sidebar open
+if (sidebar.classList.contains("active")) {
+        sidebar.style.animation = "bounceIn 0.5s ease";
+    } else {
+        sidebar.style.animation = "none";
+    }
+
+// Define bounce keyframes dynamically
+const styleSheet = document.styleSheets[0];
+styleSheet.insertRule(`
+    @keyframes bounceIn {
+        0% { transform: translateX(-100%); }
+        60% { transform: translateX(10px); }
+        100% { transform: translateX(0); }
+    }
+`, styleSheet.cssRules.length);
+
+// Add subtle card animation on load
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".card").forEach((card, index) => {
+        card.style.animation = `cardFadeIn 0.5s ease ${index * 0.1}s forwards`;
+        card.style.opacity = "0";
+    });
+    
+    styleSheet.insertRule(`
+        @keyframes cardFadeIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+    `, styleSheet.cssRules.length);
+});
+
+            // Added for dropdown
+        // Toggle dropdown menu
+        document.querySelectorAll(".sidebar .dropdown-toggle-icon").forEach(toggle => {
+            toggle.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent sidebar active state change
+                const dropdown = toggle.closest("li").querySelector(".dropdown-menu");
+                dropdown.classList.toggle("show");
+                toggle.classList.toggle("rotate");
+            });
+        });
+
+        // Handle sub-menu hover/click
+        document.querySelectorAll(".sidebar .dropdown-submenu").forEach(submenu => {
+            const toggle = submenu.querySelector(".dropdown-toggle");
+            const subMenu = submenu.querySelector(".sub-menu");
+            toggle.addEventListener("click", (e) => {
+                e.preventDefault();
+                subMenu.classList.toggle("show");
+            });
+        });
+
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            console.log("HTMX swap completed for recent activity:", evt.detail);
+        });
+
+        htmx.logAll();
+    </script>
+
+    <script>
+        // Override toggleSidebar to include localStorage persistence
+        const originalToggleSidebar = toggleSidebar;
+        toggleSidebar = function() {
+            // Call the original toggleSidebar function
+            originalToggleSidebar();
+            
+            // Save sidebar state to localStorage
+            let sidebar = document.getElementById("sidebar");
+            localStorage.setItem("sidebarState", sidebar.classList.contains("active") ? "active" : "inactive");
+        };
+
+        // Restore sidebar state and form position on page load
+        document.addEventListener("DOMContentLoaded", () => {
+            let sidebar = document.getElementById("sidebar");
+            let content = document.getElementById("content");
+            let toggleBtn = document.querySelector(".toggle-btn");
+            let formPopup = document.querySelector(".form-popup");
+            let cards = document.querySelector(".cards");
+            
+            // Get saved sidebar state or default to inactive
+            let sidebarState = localStorage.getItem("sidebarState") || "inactive";
+            
+            // Ensure correct state is applied for sidebar, content, and toggle button
+            if (sidebarState === "active") {
+                // Apply active state
+                if (!sidebar.classList.contains("active")) {
+                    sidebar.classList.add("active");
+                }
+                if (!content.classList.contains("shifted")) {
+                    content.classList.add("shifted");
+                }
+                if (!toggleBtn.classList.contains("active")) {
+                    toggleBtn.classList.add("active");
+                }
+                // Set form and cards position when sidebar is active
+                formPopup.style.left = "calc(50% + 125px)"; // Shift right beyond sidebar
+                formPopup.style.width = "calc(90% - 250px)"; // Reduce width
+                formPopup.style.transform = "translate(-50%, -70%)";
+                cards.style.left = "calc(50% + 125px)"; // Match form’s left
+                cards.style.width = "calc(90% - 250px)"; // Match form’s width
+            } else {
+                // Apply inactive state
+                if (sidebar.classList.contains("active")) {
+                    sidebar.classList.remove("active");
+                }
+                if (content.classList.contains("shifted")) {
+                    content.classList.remove("shifted");
+                }
+                if (toggleBtn.classList.contains("active")) {
+                    toggleBtn.classList.remove("active");
+                }
+                // Set form and cards position when sidebar is inactive
+                formPopup.style.left = "50%"; // Center when inactive
+                formPopup.style.width = "90%"; // Expand to 90%
+                formPopup.style.transform = "translate(-50%, -70%)";
+                cards.style.left = "50%"; // Match form’s left
+                cards.style.width = "90%"; // Match form’s width
+            }
+
+            // Override for very small screens (≤600px)
+            if (window.innerWidth <= 600) {
+                formPopup.style.left = "50%";
+                formPopup.style.width = "100%";
+                formPopup.style.top = sidebar.classList.contains("active") ? "80%" : "70%";
+                formPopup.style.transform = sidebar.classList.contains("active") ? "translate(-50%, 0)" : "translate(-50%, -50%)";
+                cards.style.left = "50%";
+                cards.style.width = "100%";
+            }
+        });
+
+        // Ensure state persists on refresh by forcing re-application
+        window.addEventListener("load", () => {
+            let sidebar = document.getElementById("sidebar");
+            let content = document.getElementById("content");
+            let toggleBtn = document.querySelector(".toggle-btn");
+            let formPopup = document.querySelector(".form-popup");
+            let cards = document.querySelector(".cards");
+            
+            let sidebarState = localStorage.getItem("sidebarState") || "inactive";
+            
+            // Re-apply state to handle refresh
+            if (sidebarState === "active") {
+                sidebar.classList.add("active");
+                content.classList.add("shifted");
+                toggleBtn.classList.add("active");
+                // Set form and cards position when sidebar is active
+                formPopup.style.left = "calc(50% + 125px)"; // Shift right beyond sidebar
+                formPopup.style.width = "calc(90% - 250px)"; // Reduce width
+                formPopup.style.transform = "translate(-50%, -70%)";
+                cards.style.left = "calc(50% + 125px)"; // Match form’s left
+                cards.style.width = "calc(90% - 250px)"; // Match form’s width
+            } else {
+                sidebar.classList.remove("active");
+                content.classList.remove("shifted");
+                toggleBtn.classList.remove("active");
+                // Set form and cards position when sidebar is inactive
+                formPopup.style.left = "50%"; // Center when inactive
+                formPopup.style.width = "90%"; // Expand to 90%
+                formPopup.style.transform = "translate(-50%, -70%)";
+                cards.style.left = "50%"; // Match form’s left
+                cards.style.width = "90%"; // Match form’s width
+            }
+
+            // Override for very small screens (≤600px)
+            if (window.innerWidth <= 600) {
+                formPopup.style.left = "50%";
+                formPopup.style.width = "100%";
+                formPopup.style.top = sidebar.classList.contains("active") ? "80%" : "70%";
+                formPopup.style.transform = sidebar.classList.contains("active") ? "translate(-50%, 0)" : "translate(-50%, -50%)";
+                cards.style.left = "50%";
+                cards.style.width = "100%";
+            }
+        });
+    </script>
+</body>
+</html>

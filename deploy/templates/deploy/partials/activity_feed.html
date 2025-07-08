@@ -1,0 +1,13 @@
+<ul>
+    {% for activity in activities %}
+    <li>
+        {{ activity.vm_name }} - {{ activity.message }} 
+        <span style="font-size:0.8rem; color:#888;">
+            {% load tz %}
+            {{ activity.timestamp|localtime|date:"H:i A" }}
+        </span>
+    </li>
+    {% empty %}
+    <li>No recent activity.</li>
+    {% endfor %}
+</ul>
